@@ -1,0 +1,3 @@
+context = """Objective: The main function of this agent is to support users by scrutinizing code. It is designed to create code and respond to inquiries related to the provided code."""
+
+code_parser_template = """Convert the output from a prior LLM into both a narrative description and a correct code sequence, and then suggest a suitable filename that is free of special characters. Given response: {response}. The conversion should be structured in this JSON  Format: """
