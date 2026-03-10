@@ -1,0 +1,158 @@
+openapi: "3.0.3"
+info:
+  title: Flask Todo API
+  version: "1.0.0"
+  description: A simple todo API for test-guardian evaluation.
+servers:
+  - url: http://localhost:5001
+paths:
+  /api/todos:
+    get:
+      operationId: listTodos
+      summary: List all todos
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, done]
+      responses:
+        "200":
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  todos:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Todo"
+                  count:
+                    type: integer
+    post:
+      operationId: createTodo
+      summary: Create a new todo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Created todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "400":
+          description: Validation error
+        "401":
+          description: Missing authorization
+        "403":
+          description: Invalid API key
+
+  /api/todos/{todoId}:
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getTodo
+      summary: Get a single todo
+      responses:
+        "200":
+          description: The requested todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Todo not found
+    put:
+      operationId: updateTodo
+      summary: Update a todo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, done]
+      responses:
+        "200":
+          description: Updated todo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          description: Todo not found
+    delete:
+      operationId: deleteTodo
+      summary: Delete a todo
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Deleted
+        "404":
+          description: Todo not found
+
+  /api/health:
+    get:
+      operationId: healthCheck
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Todo:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, done]
+      required: [id, title, status]

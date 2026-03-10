@@ -1,0 +1,46 @@
+============================================================
+test-guardian Evaluation Report
+============================================================
+
+Repos evaluated:      3
+Repos passing (>=80%): 3/3
+Avg detection rate:   100%
+Framework accuracy:   100%
+
+------------------------------------------------------------
+
+[PASS] flask-todo-api
+  Framework:   flask (correct)
+  Endpoints:   6/6 (100%)
+  Spec parse:  6 endpoints (100%)
+  Detected:
+    GET    /api/todos
+    POST   /api/todos
+    GET    /api/todos/<int:todo_id>
+    PUT    /api/todos/<int:todo_id>
+    DELETE /api/todos/<int:todo_id>
+    GET    /api/health
+
+[PASS] fastapi-notes
+  Framework:   fastapi (correct)
+  Endpoints:   6/6 (100%)
+  Detected:
+    GET    /api/notes
+    POST   /api/notes
+    GET    /api/notes/{note_id}
+    PUT    /api/notes/{note_id}
+    DELETE /api/notes/{note_id}
+    GET    /api/health
+
+[PASS] express-users-api
+  Framework:   express (correct)
+  Endpoints:   6/6 (100%)
+  Detected:
+    GET    /api/users
+    POST   /api/users
+    GET    /api/users/:id
+    PUT    /api/users/:id
+    DELETE /api/users/:id
+    GET    /api/health
+
+============================================================

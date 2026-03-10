@@ -1,0 +1,57 @@
+# Virtual environments
+ai/
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node
+node_modules/
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test Guardian
+.test-guardian/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Obsidian
+.obsidian/
+
+# Build output
+packages/cli/dist/
+packages/shared/dist/
+
+# Coverage
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Docker
+*.log
+
+# PDFs (don't commit large binary files)
+*.pdf

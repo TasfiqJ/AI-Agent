@@ -1,0 +1,84 @@
+============================================================
+test-guardian Evaluation Report
+============================================================
+
+Repos evaluated:      4
+Repos passing (>=80%): 4/4
+Avg detection rate:   100%
+Framework accuracy:   100%
+
+------------------------------------------------------------
+
+[PASS] flask-todo-api
+  Framework:   flask (correct)
+  Endpoints:   6/6 (100%)
+  Spec parse:  6 endpoints (100%)
+  Detected:
+    GET    /api/todos
+    POST   /api/todos
+    GET    /api/todos/<int:todo_id>
+    PUT    /api/todos/<int:todo_id>
+    DELETE /api/todos/<int:todo_id>
+    GET    /api/health
+
+[PASS] fastapi-notes
+  Framework:   fastapi (correct)
+  Endpoints:   6/6 (100%)
+  Detected:
+    GET    /api/notes
+    POST   /api/notes
+    GET    /api/notes/{note_id}
+    PUT    /api/notes/{note_id}
+    DELETE /api/notes/{note_id}
+    GET    /api/health
+
+[PASS] express-users-api
+  Framework:   express (correct)
+  Endpoints:   6/6 (100%)
+  Detected:
+    GET    /api/users
+    POST   /api/users
+    GET    /api/users/:id
+    PUT    /api/users/:id
+    DELETE /api/users/:id
+    GET    /api/health
+
+[PASS] checkpoint-runtime
+  Framework:   fastapi (correct)
+  Endpoints:   33/33 (100%)
+  Detected:
+    GET    /api/runs
+    POST   /api/runs
+    GET    /api/runs/{run_id}
+    POST   /api/runs/{run_id}/start
+    POST   /api/runs/{run_id}/cancel
+    POST   /api/runs/{run_id}/complete
+    POST   /api/runs/{run_id}/checkpoint
+    POST   /api/runs/{run_id}/commit
+    POST   /api/runs/{run_id}/resume
+    POST   /api/runs/{run_id}/fail
+    GET    /api/runs/{run_id}/checkpoints
+    GET    /api/runs/{run_id}/events
+    GET    /api/checkpoints/{checkpoint_id}
+    POST   /api/runs/{run_id}/checkpoints/{checkpoint_id}/shards/{shard_id}
+    GET    /api/runs/{run_id}/checkpoints/{checkpoint_id}/shards/{shard_id}
+    GET    /api/workers
+    POST   /api/workers/register
+    POST   /api/workers/{worker_id}/heartbeat
+    POST   /api/workers/{worker_id}/deregister
+    POST   /api/datasets
+    GET    /api/health
+    GET    /api/metrics/summary
+    GET    /api/metrics/heartbeat-lags
+    GET    /api/metrics/prometheus
+    GET    /api/metrics/performance
+    GET    /api/demo/system
+    GET    /api/demo/containers
+    GET    /api/demo/logs
+    GET    /api/demo/storage
+    GET    /api/demo/storage/manifest
+    POST   /api/demo/kill-worker/{container_name}
+    POST   /api/demo/visitors/ping
+    GET    /api/demo/activity
+
+============================================================

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test-guardian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        surface: { 950: '#0a0a0f', 900: '#111118', 800: '#1a1a24', 700: '#252530' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/dashboard/static/styles.css">
+</head>
+<body class="bg-surface-950 text-gray-100 min-h-screen font-sans" x-data="dashboard()">
+
+    <!-- Header -->
+    <header class="border-b border-gray-800/50 bg-surface-900/80 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold">
+                    <span class="text-cyan-400">test</span><span class="text-gray-300">-guardian</span>
+                </h1>
+                <span class="text-xs text-gray-500 ml-1">v0.1.0</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full" :class="connected ? 'bg-emerald-400 shadow-lg shadow-emerald-400/50 animate-pulse' : 'bg-red-400'"></div>
+                <span class="text-xs text-gray-400" x-text="connected ? 'Connected' : 'Disconnected'"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="border-b border-gray-800/50 bg-surface-900/40">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex gap-1">
+                <template x-for="tab in tabs" :key="tab.id">
+                    <button
+                        @click="activeTab = tab.id"
+                        :class="activeTab === tab.id
+                            ? 'text-cyan-400 border-cyan-400 bg-cyan-400/5'
+                            : 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600'"
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 flex items-center gap-2"
+                    >
+                        <span x-html="tab.icon"></span>
+                        <span x-text="tab.label"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- ============ SCANNER TAB ============ -->
+        <section x-show="activeTab === 'scanner'" x-transition>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2">Project Scanner</h2>
+                <p class="text-gray-400">Point at any API project to detect its framework and endpoints.</p>
+            </div>
+
+            <!-- Path Input -->
+            <div class="flex gap-3 mb-8">
+                <input
+                    type="text"
+                    x-model="scanPath"
+                    @keydown.enter="scanProject()"
+                    placeholder="Enter project path... e.g. C:\path\to\my-api"
+                    class="flex-1 bg-surface-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 font-mono text-sm"
+                >
+                <button
+                    @click="openBrowse('scan')"
+                    class="px-4 py-3 bg-surface-800 border border-gray-700 hover:border-cyan-600 hover:text-cyan-400 text-gray-400 font-medium rounded-lg transition-colors flex items-center gap-2"
+                    title="Browse folders"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                    </svg>
+                    Browse
+                </button>
+                <button
+                    @click="scanProject()"
+                    :disabled="scanning || !scanPath"
+                    class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                    <svg x-show="!scanning" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <svg x-show="scanning" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span x-text="scanning ? 'Scanning...' : 'Scan'"></span>
+                </button>
+            </div>
+
+            <!-- Quick access buttons -->
+            <div class="flex gap-2 mb-8 flex-wrap">
+                <span class="text-xs text-gray-500 self-center mr-1">Quick:</span>
+                <template x-for="demo in quickPaths" :key="demo.label">
+                    <button
+                        @click="scanPath = demo.path; scanProject()"
+                        class="px-3 py-1.5 text-xs bg-surface-800 border border-gray-700 rounded-full hover:border-cyan-600 hover:text-cyan-400 transition-colors"
+                        x-text="demo.label"
+                    ></button>
+                </template>
+            </div>
+
+            <!-- Scan Results -->
+            <div x-show="scanResult" x-transition class="space-y-6">
+                <!-- Framework badge -->
+                <div class="flex items-center gap-4">
+                    <div class="px-4 py-2 rounded-lg text-sm font-bold"
+                        :class="{
+                            'bg-green-500/10 text-green-400 border border-green-500/20': scanResult?.framework === 'flask',
+                            'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': scanResult?.framework === 'fastapi',
+                            'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20': scanResult?.framework === 'express',
+                            'bg-gray-500/10 text-gray-400 border border-gray-500/20': !['flask','fastapi','express'].includes(scanResult?.framework)
+                        }"
+                        x-text="scanResult?.framework?.toUpperCase()">
+                    </div>
+                    <div class="text-2xl font-bold text-white" x-text="scanResult?.endpoints_detected + ' endpoints'"></div>
+                    <button
+                        @click="runConfig.path = scanPath; activeTab = 'run'"
+                        class="ml-auto px-4 py-2 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-lg hover:bg-purple-600/30 transition-colors text-sm font-medium"
+                    >
+                        Generate Tests &rarr;
+                    </button>
+                </div>
+
+                <!-- Endpoint Cards -->
+                <div class="grid gap-2">
+                    <template x-for="(ep, i) in scanResult?.endpoints || []" :key="i">
+                        <div class="bg-surface-800 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-4 hover:border-gray-700 transition-colors endpoint-card">
+                            <span class="method-badge font-mono text-xs font-bold px-2.5 py-1 rounded-md w-16 text-center"
+                                :class="{
+                                    'bg-emerald-500/15 text-emerald-400': ep.method === 'GET',
+                                    'bg-amber-500/15 text-amber-400': ep.method === 'POST',
+                                    'bg-blue-500/15 text-blue-400': ep.method === 'PUT',
+                                    'bg-rose-500/15 text-rose-400': ep.method === 'DELETE',
+                                    'bg-purple-500/15 text-purple-400': ep.method === 'PATCH',
+                                }"
+                                x-text="ep.method"></span>
+                            <span class="font-mono text-sm text-gray-200 flex-1" x-text="ep.path"></span>
+                            <span class="text-xs text-gray-500" x-text="ep.handler"></span>
+                            <span class="text-xs text-gray-600 font-mono" x-text="ep.file + ':' + ep.line"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ AGENT RUN TAB ============ -->
+        <section x-show="activeTab === 'run'" x-transition>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2">Agent Run</h2>
+                <p class="text-gray-400">Execute the Plan &rarr; Act &rarr; Verify loop to generate tests.</p>
+            </div>
+
+            <!-- Config -->
+            <div x-show="!running && currentState === 'IDLE'" class="bg-surface-800 border border-gray-800 rounded-xl p-6 mb-8 space-y-4">
+                <div>
+                    <label class="text-xs text-gray-400 mb-1 block">Project Path</label>
+                    <div class="flex gap-2">
+                        <input type="text" x-model="runConfig.path" placeholder="Project path..."
+                            class="flex-1 bg-surface-900 border border-gray-700 rounded-lg px-4 py-2.5 text-sm font-mono text-gray-100 focus:outline-none focus:border-cyan-500">
+                        <button @click="openBrowse('run')"
+                            class="px-3 py-2.5 bg-surface-900 border border-gray-700 hover:border-cyan-600 hover:text-cyan-400 text-gray-400 rounded-lg transition-colors flex items-center gap-1.5 text-xs"
+                            title="Browse folders">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                            </svg>
+                            Browse
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-xs text-gray-400 mb-1 block">Model</label>
+                        <input type="text" x-model="runConfig.model"
+                            class="w-full bg-surface-900 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono text-gray-300 focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 mb-1 block">Max Iterations</label>
+                        <input type="number" x-model="runConfig.maxIterations" min="1" max="10"
+                            class="w-full bg-surface-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-cyan-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 mb-1 block">Permission Mode</label>
+                        <select x-model="runConfig.mode"
+                            class="w-full bg-surface-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-cyan-500">
+                            <option value="trust">Trust (auto-approve)</option>
+                            <option value="default">Default (manual approve)</option>
+                            <option value="plan">Plan only (read-only)</option>
+                        </select>
+                    </div>
+                </div>
+                <button @click="startRun()"
+                    :disabled="!runConfig.path"
+                    class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-700 disabled:to-gray-700 text-white font-bold rounded-lg transition-all text-sm">
+                    Start Agent Run
+                </button>
+            </div>
+
+            <!-- State Machine Pipeline -->
+            <div x-show="running || currentState !== 'IDLE'" class="mb-8">
+                <div class="state-pipeline flex items-center justify-between bg-surface-800 border border-gray-800 rounded-xl p-6">
+                    <template x-for="(state, idx) in pipelineStates" :key="state">
+                        <div class="flex items-center">
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 border-2"
+                                    :class="{
+                                        'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-lg shadow-cyan-500/20 state-active': currentState === state,
+                                        'bg-emerald-500/20 border-emerald-500 text-emerald-400': isStatePast(state),
+                                        'bg-surface-900 border-gray-700 text-gray-500': !isStatePast(state) && currentState !== state,
+                                        'bg-red-500/20 border-red-500 text-red-400': (state === 'FAILED' || state === 'REVERTED') && currentState === state,
+                                    }">
+                                    <span x-text="stateIcons[state]"></span>
+                                </div>
+                                <span class="text-[10px] font-medium"
+                                    :class="currentState === state ? 'text-cyan-400' : isStatePast(state) ? 'text-emerald-500' : 'text-gray-600'"
+                                    x-text="state"></span>
+                            </div>
+                            <div x-show="idx < pipelineStates.length - 1"
+                                class="w-8 h-0.5 mx-1 transition-colors duration-500"
+                                :class="isStatePast(pipelineStates[idx + 1]) || currentState === pipelineStates[idx + 1] ? 'bg-emerald-500/50' : 'bg-gray-700'">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Live Logs -->
+            <div x-show="runLogs.length > 0" class="bg-surface-800 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                    <span class="text-xs font-medium text-gray-400">Activity Log</span>
+                    <span class="text-xs text-gray-600" x-text="runLogs.length + ' events'"></span>
+                </div>
+                <div class="log-container p-4 space-y-1 max-h-80 overflow-y-auto font-mono text-xs" x-ref="logContainer">
+                    <template x-for="(log, i) in runLogs" :key="i">
+                        <div class="flex gap-3 py-1 log-entry"
+                            :class="{
+                                'text-cyan-400': log.type === 'state',
+                                'text-amber-400': log.type === 'tool',
+                                'text-gray-400': log.type === 'info',
+                                'text-red-400': log.type === 'error',
+                                'text-emerald-400': log.type === 'success',
+                            }">
+                            <span class="text-gray-600 shrink-0" x-text="log.time"></span>
+                            <span class="shrink-0 w-4" x-text="log.icon"></span>
+                            <span x-text="log.message"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ TEST RESULTS TAB ============ -->
+        <section x-show="activeTab === 'results'" x-transition>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2">Test Results</h2>
+                <p class="text-gray-400">Results from the last agent run.</p>
+            </div>
+
+            <div x-show="testResults.length === 0" class="text-center py-16 text-gray-500">
+                <p class="text-lg">No test results yet</p>
+                <p class="text-sm mt-2">Run the agent to generate and execute tests.</p>
+            </div>
+
+            <div x-show="testResults.length > 0" class="space-y-6">
+                <template x-for="(tr, i) in testResults" :key="i">
+                    <div class="bg-surface-800 border border-gray-800 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-medium text-gray-300">Iteration <span x-text="tr.iteration"></span></span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold"
+                                :class="tr.all_pass ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'"
+                                x-text="tr.all_pass ? 'ALL PASSED' : 'FAILURES'"></span>
+                        </div>
+                        <pre class="text-xs text-gray-400 bg-surface-900 rounded-lg p-4 overflow-x-auto font-mono" x-text="tr.raw_output"></pre>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ============ EVALUATION TAB ============ -->
+        <section x-show="activeTab === 'eval'" x-transition>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2">Evaluation</h2>
+                <p class="text-gray-400">Measure detection accuracy against known repos.</p>
+            </div>
+
+            <div class="flex gap-3 mb-8">
+                <button @click="runEval(false)" :disabled="evalRunning"
+                    class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+                    <svg x-show="evalRunning" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Run Demo Eval (3 repos)
+                </button>
+                <button @click="runEval(true)" :disabled="evalRunning"
+                    class="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white font-medium rounded-lg transition-colors">
+                    Run Full Eval (+ checkpoint)
+                </button>
+            </div>
+
+            <!-- Eval Results -->
+            <div x-show="evalResult" x-transition class="space-y-6">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="bg-surface-800 border border-gray-800 rounded-xl p-5 text-center">
+                        <div class="text-3xl font-bold text-white" x-text="evalResult?.total_repos"></div>
+                        <div class="text-xs text-gray-500 mt-1">Repos Tested</div>
+                    </div>
+                    <div class="bg-surface-800 border border-gray-800 rounded-xl p-5 text-center">
+                        <div class="text-3xl font-bold text-emerald-400" x-text="evalResult?.repos_passed + '/' + evalResult?.total_repos"></div>
+                        <div class="text-xs text-gray-500 mt-1">Repos Passed</div>
+                    </div>
+                    <div class="bg-surface-800 border border-gray-800 rounded-xl p-5 text-center">
+                        <div class="text-3xl font-bold text-cyan-400" x-text="Math.round(evalResult?.avg_detection_rate * 100) + '%'"></div>
+                        <div class="text-xs text-gray-500 mt-1">Detection Rate</div>
+                    </div>
+                    <div class="bg-surface-800 border border-gray-800 rounded-xl p-5 text-center">
+                        <div class="text-3xl font-bold text-amber-400" x-text="Math.round(evalResult?.framework_accuracy * 100) + '%'"></div>
+                        <div class="text-xs text-gray-500 mt-1">Framework Accuracy</div>
+                    </div>
+                </div>
+
+                <!-- Per-repo results -->
+                <template x-for="r in evalResult?.results || []" :key="r.repo_name">
+                    <div class="bg-surface-800 border border-gray-800 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="px-2.5 py-1 rounded-md text-xs font-bold"
+                                    :class="{
+                                        'bg-green-500/10 text-green-400': r.framework_detected === 'flask',
+                                        'bg-emerald-500/10 text-emerald-400': r.framework_detected === 'fastapi',
+                                        'bg-yellow-500/10 text-yellow-400': r.framework_detected === 'express',
+                                    }"
+                                    x-text="r.framework_detected"></span>
+                                <span class="font-bold text-white" x-text="r.repo_name"></span>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold"
+                                :class="r.endpoint_detection_rate >= 0.8 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'"
+                                x-text="r.endpoint_detection_rate >= 0.8 ? 'PASS' : 'FAIL'"></span>
+                        </div>
+                        <!-- Detection bar -->
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-3 bg-surface-900 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-700 ease-out"
+                                    :class="r.endpoint_detection_rate >= 0.8 ? 'bg-gradient-to-r from-emerald-500 to-cyan-400' : 'bg-red-500'"
+                                    :style="'width: ' + Math.round(r.endpoint_detection_rate * 100) + '%'">
+                                </div>
+                            </div>
+                            <span class="text-sm font-mono font-bold"
+                                :class="r.endpoint_detection_rate >= 0.8 ? 'text-emerald-400' : 'text-red-400'"
+                                x-text="r.endpoints_detected + '/' + r.endpoints_expected + ' (' + Math.round(r.endpoint_detection_rate * 100) + '%)'">
+                            </span>
+                        </div>
+                        <!-- Endpoint list -->
+                        <div x-show="r.details?.endpoints" class="mt-4 grid grid-cols-2 gap-1">
+                            <template x-for="ep in r.details?.endpoints || []" :key="ep.path + ep.method">
+                                <div class="flex items-center gap-2 text-xs py-0.5">
+                                    <span class="font-mono font-bold w-12"
+                                        :class="{
+                                            'text-emerald-400': ep.method === 'GET',
+                                            'text-amber-400': ep.method === 'POST',
+                                            'text-blue-400': ep.method === 'PUT',
+                                            'text-rose-400': ep.method === 'DELETE',
+                                        }"
+                                        x-text="ep.method"></span>
+                                    <span class="text-gray-400 font-mono" x-text="ep.path"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ============ HISTORY TAB ============ -->
+        <section x-show="activeTab === 'history'" x-transition>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-2">History</h2>
+                <p class="text-gray-400">Past scans and agent runs.</p>
+            </div>
+
+            <!-- Scan History -->
+            <div x-show="scanHistory.length > 0" class="mb-8">
+                <h3 class="text-sm font-medium text-gray-400 mb-3">Recent Scans</h3>
+                <div class="space-y-2">
+                    <template x-for="(s, i) in scanHistory" :key="i">
+                        <div class="bg-surface-800 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-4">
+                            <span class="text-xs text-gray-500 font-mono w-20" x-text="new Date(s.timestamp).toLocaleTimeString()"></span>
+                            <span class="px-2 py-0.5 rounded text-xs font-bold"
+                                :class="{
+                                    'bg-green-500/10 text-green-400': s.framework === 'flask',
+                                    'bg-emerald-500/10 text-emerald-400': s.framework === 'fastapi',
+                                    'bg-yellow-500/10 text-yellow-400': s.framework === 'express',
+                                }"
+                                x-text="s.framework"></span>
+                            <span class="text-sm text-gray-300 flex-1 font-mono truncate" x-text="s.repo_path"></span>
+                            <span class="text-xs text-gray-500" x-text="s.endpoints_detected + ' endpoints'"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Run History -->
+            <div x-show="runHistory.length > 0">
+                <h3 class="text-sm font-medium text-gray-400 mb-3">Agent Runs</h3>
+                <div class="space-y-2">
+                    <template x-for="(r, i) in runHistory" :key="i">
+                        <div class="bg-surface-800 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-4">
+                            <span class="text-xs text-gray-500 font-mono w-20" x-text="new Date(r.started_at).toLocaleTimeString()"></span>
+                            <span class="px-2 py-0.5 rounded text-xs font-bold"
+                                :class="{
+                                    'bg-emerald-500/10 text-emerald-400': r.state === 'COMPLETE',
+                                    'bg-red-500/10 text-red-400': r.state === 'FAILED',
+                                    'bg-amber-500/10 text-amber-400': r.state === 'REVERTED',
+                                }"
+                                x-text="r.state"></span>
+                            <span class="text-sm text-gray-300 flex-1 font-mono truncate" x-text="r.repo_path"></span>
+                            <span class="text-xs text-gray-500" x-text="r.iterations + ' iterations'"></span>
+                            <span class="text-xs text-gray-600 font-mono" x-text="r.run_id"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="scanHistory.length === 0 && runHistory.length === 0" class="text-center py-16 text-gray-500">
+                <p class="text-lg">No history yet</p>
+                <p class="text-sm mt-2">Scan a project or run the agent to see history here.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ BROWSE MODAL ============ -->
+    <div x-show="browseOpen" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="browseOpen = false">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="browseOpen = false"></div>
+
+        <!-- Modal -->
+        <div class="relative w-full max-w-2xl bg-surface-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden"
+             x-show="browseOpen" x-transition.scale.origin.center>
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                    </svg>
+                    <h3 class="text-lg font-bold text-white">Browse Folders</h3>
+                </div>
+                <button @click="browseOpen = false" class="text-gray-400 hover:text-white transition-colors p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Breadcrumb -->
+            <div class="px-6 py-3 border-b border-gray-800/50 bg-surface-950/50 flex items-center gap-1 overflow-x-auto text-sm">
+                <template x-for="(crumb, idx) in browseBreadcrumbs()" :key="idx">
+                    <div class="flex items-center shrink-0">
+                        <span x-show="idx > 0" class="text-gray-600 mx-1">/</span>
+                        <button
+                            @click="browseTo(crumb.path)"
+                            class="text-gray-400 hover:text-cyan-400 transition-colors whitespace-nowrap"
+                            :class="idx === browseBreadcrumbs().length - 1 ? 'text-cyan-400 font-medium' : ''"
+                            x-text="crumb.label">
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Current path display -->
+            <div class="px-6 py-2 border-b border-gray-800/50 bg-surface-800/30">
+                <div class="font-mono text-xs text-gray-500 truncate" x-text="browseCurrent || 'Select a location...'"></div>
+            </div>
+
+            <!-- Folder list -->
+            <div class="max-h-80 overflow-y-auto">
+                <!-- Loading -->
+                <div x-show="browseLoading" class="flex items-center justify-center py-12">
+                    <svg class="w-6 h-6 animate-spin text-cyan-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </div>
+
+                <!-- Error -->
+                <div x-show="browseError && !browseLoading" class="px-6 py-8 text-center">
+                    <p class="text-red-400 text-sm" x-text="browseError"></p>
+                </div>
+
+                <!-- Up / Parent -->
+                <button x-show="browseParent !== '' && !browseLoading"
+                    @click="browseTo(browseParent)"
+                    class="w-full px-6 py-3 flex items-center gap-3 hover:bg-surface-800 transition-colors text-left border-b border-gray-800/30">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                    </svg>
+                    <span class="text-gray-400 text-sm">..</span>
+                </button>
+
+                <!-- Folders -->
+                <template x-for="item in browseItems" :key="item.path">
+                    <button
+                        @click="browseTo(item.path)"
+                        class="w-full px-6 py-3 flex items-center gap-3 hover:bg-surface-800 transition-colors text-left border-b border-gray-800/30 group">
+                        <svg class="w-4 h-4 text-amber-400/70 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            x-show="item.type === 'folder'">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                        </svg>
+                        <svg class="w-4 h-4 text-blue-400/70 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            x-show="item.type === 'drive'">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                        </svg>
+                        <span class="text-gray-200 text-sm group-hover:text-white transition-colors" x-text="item.name"></span>
+                    </button>
+                </template>
+
+                <!-- Empty -->
+                <div x-show="browseItems.length === 0 && !browseLoading && !browseError" class="px-6 py-8 text-center">
+                    <p class="text-gray-500 text-sm">No folders found</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between px-6 py-4 border-t border-gray-800 bg-surface-950/50">
+                <span class="text-xs text-gray-500" x-text="browseItems.length + ' folders'"></span>
+                <div class="flex gap-3">
+                    <button @click="browseOpen = false"
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                        Cancel
+                    </button>
+                    <button @click="selectFolder()"
+                        :disabled="!browseCurrent"
+                        class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium rounded-lg transition-colors text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Select This Folder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/dashboard/static/app.js"></script>
+</body>
+</html>
