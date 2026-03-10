@@ -1,6 +1,24 @@
 # test-guardian
 
-An agentic CLI that joins a repo, detects API endpoints, generates test suites, runs them in a Docker sandbox, iterates to green, and produces reviewable diffs with human approval.
+An agentic CLI that joins a repo, detects API endpoints, generates test suites, runs them in a Docker sandbox, iterates to green, and produces reviewable diffs with human approval. Includes a real-time web dashboard for scanning, running, and evaluating projects.
+
+## Dashboard
+
+test-guardian ships with a built-in web dashboard served directly from the FastAPI backend — no separate build step required.
+
+**Scanning checkpoint-runtime (33 FastAPI endpoints detected):**
+
+![Scanner — checkpoint-runtime](docs/screenshots/scanner-checkpoint.png)
+
+**Evaluation — 4/4 repos at 100% detection across Flask, FastAPI, and Express:**
+
+![Evaluation results](docs/screenshots/eval-full.png)
+
+**Full circle — test-guardian analyzing its sibling project [checkpoint-runtime](https://ckpt.tasfiqj.com) (33/33 endpoints):**
+
+![checkpoint-runtime eval card](docs/screenshots/eval-checkpoint-card.png)
+
+> test-guardian was built alongside [checkpoint-runtime](https://ckpt.tasfiqj.com), a distributed training checkpoint system with a FastAPI control plane, Rust gRPC data plane, and React dashboard. Running test-guardian's scanner against checkpoint-runtime — and watching it correctly detect all 33 endpoints across runs, checkpoints, workers, metrics, and demo routes — is the full-circle moment: one project validating the other.
 
 ## Quick Start
 
@@ -9,13 +27,13 @@ An agentic CLI that joins a repo, detects API endpoints, generates test suites, 
 pnpm install
 pip install -e agent/
 
-# Initialize for a target repo
+# Start the dashboard
+cd agent && uvicorn guardian.server:app --reload
+# Open http://localhost:8000/dashboard/
+
+# Or use the CLI
 test-guardian init ./demo/flask-todo-api
-
-# Generate a plan (read-only)
 test-guardian plan
-
-# Execute: Plan → Act → Verify
 test-guardian run
 ```
 
@@ -35,6 +53,7 @@ PLAN (read-only)  →  ACT (permissioned)  →  VERIFY (sandboxed)
 |-------|-----------|---------|
 | CLI | TypeScript + React Ink | Terminal UI, diff review, approval gates |
 | Agent | Python + FastAPI | Agentic loop, LLM orchestration, tool execution |
+| Dashboard | Alpine.js + Tailwind | Real-time web UI, SSE streaming, evaluation |
 | Sandbox | Docker | Isolated test execution, network=none |
 | Code Intel | tree-sitter | AST parsing, endpoint detection |
 | LLM | Ollama (default) | Zero-cost local inference |
@@ -54,6 +73,11 @@ test-guardian/
 ├── packages/cli/       # TypeScript + React Ink CLI
 ├── packages/shared/    # Shared types
 ├── agent/              # Python agent backend
+│   └── src/guardian/
+│       ├── dashboard/  # Web dashboard (routes, templates, static)
+│       ├── llm/        # LLM client abstraction
+│       ├── safety/     # Permission manager
+│       └── tools/      # Code intel, sandbox, file ops
 ├── sandbox/            # Docker sandbox images
 ├── demo/               # Demo repos for evaluation
 ├── eval/               # Evaluation harness
@@ -70,7 +94,11 @@ pnpm test              # Run all TS tests
 pnpm lint              # Lint all packages
 pnpm typecheck         # Type check all packages
 
-# Python
+# Python (157 tests)
 cd agent && pytest     # Run Python tests
 cd agent && ruff check . && mypy src/  # Lint + typecheck
+
+# Dashboard
+cd agent && uvicorn guardian.server:app --reload
+# → http://localhost:8000/dashboard/
 ```
